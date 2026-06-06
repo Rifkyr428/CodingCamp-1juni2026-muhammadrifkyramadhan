@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List Life Dashboard</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter for ultra-clean UI, JetBrains Mono for clean numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons for Beautiful Visuals -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'glass-light': '0 8px 32px 0 rgba(31, 38, 135, 0.08)',
+            'glass-dark': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+            'glow-primary': '0 0 15px rgba(99, 102, 241, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Premium visual effects */
+    body {
+      background-attachment: fixed;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    /* Smooth transition for theme toggle */
+    * {
+      transition: background-color 0.4s ease, border-color 0.4s ease, color 0.2s ease, box-shadow 0.3s ease;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.3);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+
+    /* Custom Glassmorphism styles */
+    .glass-panel {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-slate-100 min-h-screen py-6 px-4 md:px-8 transition-all duration-500 flex flex-col justify-between">
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto w-full flex-grow flex flex-col gap-6">
+    
+    <!-- Top Nav / Personalized Header Section -->
+    <header class="glass-panel bg-white/5 dark:bg-slate-950/45 border border-white/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-glass-light dark:shadow-glass-dark flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+      <!-- Ambient light effect within header -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Live Dynamic Greeting Info -->
+      <div class="z-10 w-full md:w-auto">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400">
+            <i id="greeting-icon" class="fa-solid fa-sun text-lg"></i>
+          </span>
+          <span id="greeting-text" class="text-sm font-semibold tracking-wider text-indigo-300 uppercase">WELCOME BACK</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>Hello,</span>
+          <span id="username-display" class="relative group cursor-pointer border-b-2 border-dashed border-indigo-400 hover:border-indigo-300 px-1 py-0.5 rounded transition duration-200" title="Click to rename">
+            Rifky
+          </span>
+          <input id="username-input" class="hidden bg-slate-800/90 border border-indigo-500 text-slate-100 px-2 py-0.5 rounded outline-none font-bold text-2xl md:text-3xl max-w-[200px]" type="text" maxlength="20">
+          <span class="text-slate-400 font-light">! Ready for your flow?</span>
+        </h1>
+      </div>
+
+      <!-- Real-Time Premium Clock Display -->
+      <div class="flex flex-col md:items-end z-10 w-full md:w-auto border-t border-white/10 md:border-t-0 pt-4 md:pt-0">
+        <div id="live-clock" class="font-mono text-3xl md:text-4xl font-bold tracking-tight text-white drop-shadow-sm flex items-center gap-1">
+          00:00:00
+        </div>
+        <div id="live-date" class="text-xs md:text-sm font-medium text-slate-400 mt-1 uppercase tracking-widest">
+          Loading system date...
+        </div>
+      </div>
+
+      <!-- Controls Block: Theme & Settings Quick Launcher -->
+      <div class="absolute top-4 right-4 flex items-center gap-2">
+        <button id="theme-toggle-btn" class="w-10 h-10 rounded-full glass-panel bg-white/10 dark:bg-slate-800/40 hover:bg-white/20 dark:hover:bg-slate-700/50 border border-white/20 text-slate-200 dark:text-amber-400 flex items-center justify-center transition shadow-sm" title="Toggle UI Theme">
+          <i id="theme-icon" class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mid Panel: Focus Engine & Task Manager (Grid System) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      
+      <!-- LEFT MODULE: Task Engine & Checklist (7 Cols on large screen) -->
+      <div class="lg:col-span-7 glass-panel bg-white/5 dark:bg-slate-950/40 border border-white/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-glass-light dark:shadow-glass-dark flex flex-col justify-between relative overflow-hidden min-h-[520px]">
+        
+        <!-- Header & Action Header -->
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400">
+                <i class="fa-solid fa-square-check text-lg"></i>
+              </span>
+              <div>
+                <h2 class="text-lg font-bold text-white tracking-tight">Today's Focus Tasks</h2>
+                <p class="text-xs text-slate-400">Prioritize and tick off goals</p>
+              </div>
+            </div>
+            <!-- Progress Counter Badge -->
+            <div class="flex flex-col items-end">
+              <span id="task-count-badge" class="px-3 py-1 text-xs font-semibold rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                0 / 0 Done
+              </span>
+            </div>
+          </div>
+
+          <!-- Completion Progress Bar -->
+          <div class="w-full bg-slate-750 dark:bg-slate-800/40 h-2 rounded-full mb-6 overflow-hidden border border-white/5">
+            <div id="todo-progress-fill" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full w-0 transition-all duration-500 rounded-full"></div>
+          </div>
+
+          <!-- Add Task Input Form -->
+          <form id="todo-form" class="flex gap-2 mb-6">
+            <input id="todo-input" type="text" placeholder="What is your next objective?" required class="flex-grow glass-panel bg-white/5 dark:bg-slate-900/60 border border-white/10 dark:border-white/5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none px-4 py-3 rounded-2xl text-slate-100 placeholder-slate-400 text-sm transition shadow-inner">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium px-5 py-3 rounded-2xl flex items-center gap-2 transition shadow-glow-primary">
+              <i class="fa-solid fa-plus text-sm"></i>
+              <span class="hidden sm:inline">Add</span>
+            </button>
+          </form>
+
+          <!-- List Filter Segment Control -->
+          <div class="flex gap-1 bg-slate-850 dark:bg-slate-900/60 p-1 rounded-xl border border-white/5 mb-4 max-w-sm">
+            <button id="filter-all" class="flex-1 text-center py-1.5 text-xs font-medium rounded-lg bg-indigo-500/20 text-indigo-300 transition-all" onclick="setTodoFilter('all')">All</button>
+            <button id="filter-active" class="flex-1 text-center py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all" onclick="setTodoFilter('active')">Active</button>
+            <button id="filter-completed" class="flex-1 text-center py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all" onclick="setTodoFilter('completed')">Completed</button>
+          </div>
+
+          <!-- Task Scroll Container -->
+          <div id="todo-list" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+            <!-- Dynamic items go here -->
+          </div>
+
+          <!-- Empty State Graphic -->
+          <div id="todo-empty" class="hidden flex-col items-center justify-center py-10 text-center">
+            <div class="w-16 h-16 rounded-full bg-slate-800/40 flex items-center justify-center mb-3 border border-white/5">
+              <i class="fa-solid fa-list-check text-slate-500 text-xl"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-400">All tasks cleared!</p>
+            <p class="text-xs text-slate-500 mt-1">Enjoy the clarity or create a new prompt.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT MODULE: Focus Engine & Pomodoro (5 Cols on large screen) -->
+      <div class="lg:col-span-5 glass-panel bg-white/5 dark:bg-slate-950/40 border border-white/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-glass-light dark:shadow-glass-dark flex flex-col justify-between relative overflow-hidden">
+        
+        <!-- Ambient orb behind timer -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 w-full flex flex-col items-center">
+          
+          <!-- Timer Title & Header -->
+          <div class="flex items-center justify-between w-full mb-6">
+            <div class="flex items-center gap-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400">
+                <i class="fa-solid fa-hourglass-half text-lg"></i>
+              </span>
+              <div>
+                <h2 class="text-lg font-bold text-white tracking-tight">Focus Clock</h2>
+                <p class="text-xs text-slate-400">Pomodoro strategy helper</p>
+              </div>
+            </div>
+            <!-- Configure Trigger -->
+            <button id="pomo-config-trigger" class="text-slate-400 hover:text-slate-200 hover:rotate-45 transition duration-300 p-2 rounded-xl bg-white/5 dark:bg-slate-800/40 border border-white/10" title="Set Target Duration">
+              <i class="fa-solid fa-sliders"></i>
+            </button>
+          </div>
+
+          <!-- Configuration Pane (Inline Accordion Card) -->
+          <div id="pomo-settings-card" class="hidden w-full bg-slate-850/90 dark:bg-slate-900/95 border border-white/10 rounded-2xl p-4 mb-6 transition-all duration-300">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm font-bold text-white">Adjust Focus Duration</span>
+              <span id="pomo-slider-val" class="text-xs font-mono font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">25 Min</span>
+            </div>
+            <input id="pomo-duration-range" type="range" min="1" max="60" value="25" class="w-full accent-indigo-500 bg-slate-700 h-1.5 rounded-lg appearance-none cursor-pointer mb-3">
+            <div class="flex justify-end gap-2">
+              <button id="pomo-settings-cancel" class="px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-200">Cancel</button>
+              <button id="pomo-settings-apply" class="px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500">Apply & Reset</button>
+            </div>
+          </div>
+
+          <!-- Circular Time Visualizer (SVG Canvas Concept) -->
+          <div class="relative flex items-center justify-center w-48 h-48 my-4">
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <!-- Background Circle Track -->
+              <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" class="text-slate-800/20 dark:text-slate-800/60" fill="transparent"/>
+              <!-- Foreground Progress Arch -->
+              <circle id="timer-progress-ring" cx="50" cy="50" r="44" stroke="currentColor" stroke-width="6" class="text-indigo-500 transition-all duration-100" fill="transparent" stroke-dasharray="276.4" stroke-dashoffset="0" stroke-linecap="round"/>
+            </svg>
+            
+            <!-- Realtime Clock Numbers Display -->
+            <div class="absolute flex flex-col items-center">
+              <span id="timer-numbers" class="font-mono text-4xl font-extrabold tracking-tight text-white select-none">25:00</span>
+              <span id="timer-status-badge" class="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-1">Ready</span>
+            </div>
+          </div>
+
+          <!-- Controls Bar -->
+          <div class="flex items-center gap-3 mt-6 w-full max-w-xs">
+            <button id="pomo-start-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition duration-200 shadow-glow-primary active:scale-95">
+              <i class="fa-solid fa-play text-xs"></i> Start
+            </button>
+            <button id="pomo-stop-btn" class="hidden flex-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition duration-200 active:scale-95">
+              <i class="fa-solid fa-pause text-xs"></i> Pause
+            </button>
+            <button id="pomo-reset-btn" class="w-14 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 border border-white/10 font-semibold py-3 rounded-2xl flex items-center justify-center transition duration-200 active:scale-95" title="Reset Counter">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- BOTTOM PANEL: Quick Links / Custom Launchpad -->
+    <section class="glass-panel bg-white/5 dark:bg-slate-950/40 border border-white/10 dark:border-white/5 rounded-3xl p-6 md:p-8 shadow-glass-light dark:shadow-glass-dark relative overflow-hidden">
+      <!-- Decor light blob -->
+      <div class="absolute top-1/2 -right-12 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- Section Header with Plus Trigger -->
+      <div class="flex items-center justify-between mb-6 z-10 relative">
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400">
+            <i class="fa-solid fa-compass text-lg"></i>
+          </span>
+          <div>
+            <h2 class="text-lg font-bold text-white tracking-tight">Launchpad</h2>
+            <p class="text-xs text-slate-400">Quickly navigate to important links</p>
+          </div>
+        </div>
+        <button id="add-link-btn" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition duration-200">
+          <i class="fa-solid fa-plus"></i> Add Link
+        </button>
+      </div>
+
+      <!-- Add Link Dialog Form Block -->
+      <div id="add-link-panel" class="hidden bg-slate-850 dark:bg-slate-900/80 border border-white/10 rounded-2xl p-4 md:p-6 mb-6">
+        <form id="link-form" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+          <div class="md:col-span-4">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Display Name</label>
+            <input id="link-name" type="text" placeholder="e.g. GitHub Workspace" required class="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-500 outline-none">
+          </div>
+          <div class="md:col-span-6">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Destination URL</label>
+            <input id="link-url" type="text" placeholder="e.g. github.com" required class="w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-emerald-500 outline-none">
+          </div>
+          <div class="md:col-span-2 flex gap-2">
+            <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-sm font-semibold transition duration-200">Save</button>
+            <button id="cancel-link-btn" type="button" class="px-3 bg-slate-800 border border-white/10 hover:bg-slate-700 rounded-xl text-slate-300 transition duration-200">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Dynamic Bookmarks Grid Layout -->
+      <div id="links-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 relative z-10">
+        <!-- Dynamic links go here -->
+      </div>
+
+      <!-- Empty Links Placeholder -->
+      <div id="links-empty" class="hidden flex-col items-center justify-center py-8 text-center">
+        <p class="text-sm text-slate-400">No bookmark shortcuts created yet</p>
+        <p class="text-xs text-slate-500 mt-1">Configure quick launch cards to build your cockpit view.</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Interactive Footer Status Bar -->
+  <footer class="max-w-7xl mx-auto w-full mt-6 pt-4 border-t border-white/15 dark:border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-400 select-none">
+    <div>
+      <span class="font-bold text-indigo-400">To-Do List Life Dashboard</span> &bull; Premium Minimalist productivity build.
+    </div>
+    <div class="flex items-center gap-4">
+      <span><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> Client-Side Sandbox (No remote logins needed)</span>
+      <button onclick="resetAllApplicationData()" class="text-rose-400 hover:text-rose-300 transition font-medium cursor-pointer" title="Wipe out local preferences database">
+        <i class="fa-solid fa-trash-can mr-1"></i> Reset Settings
+      </button>
+    </div>
+  </footer>
+
+  <!-- Complete Application State Logic in Vanilla Script -->
+  <script>
+    // --- STATE DEFINITIONS & CONFIGURATIONS ---
+    const TASK_STORAGE_KEY = 'todo_dashboard_tasks';
+    const LINK_STORAGE_KEY = 'todo_dashboard_links';
+    const CONFIG_STORAGE_KEY = 'todo_dashboard_config';
+
+    let state = {
+      tasks: [],
+      links: [],
+      config: {
+        username: 'Creator',
+        theme: 'dark',
+        pomodoroDuration: 25
+      },
+      currentTodoFilter: 'all'
+    };
+
+    // Pomodoro Engine Variables
+    let timerInterval = null;
+    let timerTotalSeconds = 0; // Configured dynamic focus length
+    let timerRemainingSeconds = 0;
+    let timerIsRunning = false;
+
+    // Default Fallback Quick Bookmarks
+    const defaultShortcuts = [
+      { id: '1', name: 'Google Search', url: 'https://google.com' },
+      { id: '2', name: 'GitHub Workspace', url: 'https://github.com' },
+      { id: '3', name: 'Tailwind Reference', url: 'https://tailwindcss.com' },
+      { id: '4', name: 'Notion Workspace', url: 'https://notion.so' },
+      { id: '5', name: 'YouTube Music', url: 'https://youtube.com' }
+    ];
+
+    // --- ELEMENT INITIALIZATION & HANDLES ---
+    document.addEventListener('DOMContentLoaded', () => {
+      initApplication();
+      startSystemClock();
+    });
+
+    // App Startup Bootstrapper
+    function initApplication() {
+      // 1. Core State Hydration
+      loadStateFromLocalStorage();
+
+      // 2. Set Up Event Listeners
+      setupThemeControl();
+      setupPersonalization();
+      setupTodoManager();
+      setupPomodoroEngine();
+      setupLaunchpad();
+
+      // 3. Render Views
+      applyTheme();
+      renderGreeting();
+      renderTasks();
+      resetTimerEngine(); // Installs loaded configuration values
+      renderLinks();
+    }
+
+    // --- COMPONENT 1: LOCAL STORAGE CONTROLLERS ---
+    function loadStateFromLocalStorage() {
+      try {
+        // Load configurations
+        const savedConfig = localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (savedConfig) {
+          state.config = { ...state.config, ...JSON.parse(savedConfig) };
+        }
+
+        // Load tasks list
+        const savedTasks = localStorage.getItem(TASK_STORAGE_KEY);
+        state.tasks = savedTasks ? JSON.parse(savedTasks) : [];
+
+        // Load shortcuts
+        const savedLinks = localStorage.getItem(LINK_STORAGE_KEY);
+        state.links = savedLinks ? JSON.parse(savedLinks) : [...defaultShortcuts];
+
+      } catch (err) {
+        console.error('Error synchronizing local storage preferences:', err);
+      }
+    }
+
+    function saveConfigState() {
+      localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(state.config));
+    }
+
+    function saveTasksState() {
+      localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(state.tasks));
+      renderTasks();
+    }
+
+    function saveLinksState() {
+      localStorage.setItem(LINK_STORAGE_KEY, JSON.stringify(state.links));
+      renderLinks();
+    }
+
+    function resetAllApplicationData() {
+      const confirmReset = window.confirm("Are you sure you want to reset your dashboard? This will restore defaults and delete all your tasks and bookmarks.");
+      if (confirmReset) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+    // --- COMPONENT 2: THEME SWITCHER CONTROLLER ---
+    function setupThemeControl() {
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      themeBtn.addEventListener('click', () => {
+        state.config.theme = state.config.theme === 'dark' ? 'light' : 'dark';
+        saveConfigState();
+        applyTheme();
+      });
+    }
+
+    function applyTheme() {
+      const htmlElement = document.documentElement;
+      const themeIcon = document.getElementById('theme-icon');
+      const body = document.body;
+
+      if (state.config.theme === 'light') {
+        htmlElement.classList.remove('dark');
+        // Elegant, smooth pastel light layout gradient
+        body.className = "bg-gradient-to-br from-indigo-50 via-slate-100 to-purple-100 text-slate-800 min-h-screen py-6 px-4 md:px-8 transition-all duration-500 flex flex-col justify-between";
+        themeIcon.className = "fa-solid fa-sun text-amber-500";
+      } else {
+        htmlElement.classList.add('dark');
+        // Dark theme premium deep visual structure
+        body.className = "bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 text-slate-100 min-h-screen py-6 px-4 md:px-8 transition-all duration-500 flex flex-col justify-between";
+        themeIcon.className = "fa-solid fa-moon text-indigo-300";
+      }
+    }
+
+    // --- COMPONENT 3: GREETING & CLOCK SYSTEM ---
+    function startSystemClock() {
+      const clockElement = document.getElementById('live-clock');
+      const dateElement = document.getElementById('live-date');
+
+      const updateClock = () => {
+        const now = new Date();
+        
+        // Precise double digit time strings
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        clockElement.innerHTML = `${hh}<span class="animate-pulse text-indigo-500/80">:</span>${mm}<span class="animate-pulse text-indigo-500/80">:</span>${ss}`;
+
+        // Human-friendly date representation
+        const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+        dateElement.textContent = now.toLocaleDateString('en-US', options);
+
+        // Periodically refresh header icons/greetings in case hour shifts mid-session
+        renderGreeting();
+      };
+
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    function renderGreeting() {
+      const hour = new Date().getHours();
+      const greetingText = document.getElementById('greeting-text');
+      const greetingIcon = document.getElementById('greeting-icon');
+
+      let greeting = "WELCOME BACK";
+      let iconClass = "fa-solid fa-sun text-amber-400";
+
+      if (hour >= 5 && hour < 12) {
+        greeting = "Good Morning";
+        iconClass = "fa-solid fa-cloud-sun text-yellow-400";
+      } else if (hour >= 12 && hour < 17) {
+        greeting = "Good Afternoon";
+        iconClass = "fa-solid fa-sun text-amber-400";
+      } else if (hour >= 17 && hour < 21) {
+        greeting = "Good Evening";
+        iconClass = "fa-solid fa-cloud-moon text-indigo-300";
+      } else {
+        greeting = "Late Night Shift";
+        iconClass = "fa-solid fa-moon text-purple-400";
+      }
+
+      greetingText.textContent = greeting;
+      greetingIcon.className = `${iconClass} text-lg`;
+    }
+
+    function setupPersonalization() {
+      const usernameDisplay = document.getElementById('username-display');
+      const usernameInput = document.getElementById('username-input');
+
+      usernameDisplay.textContent = state.config.username || 'Creator';
+
+      usernameDisplay.addEventListener('click', () => {
+        usernameDisplay.classList.add('hidden');
+        usernameInput.classList.remove('hidden');
+        usernameInput.value = usernameDisplay.textContent.trim();
+        usernameInput.focus();
+        usernameInput.select();
+      });
+
+      const saveUsernameInput = () => {
+        const trimmedVal = usernameInput.value.trim();
+        if (trimmedVal) {
+          state.config.username = trimmedVal;
+          saveConfigState();
+          usernameDisplay.textContent = trimmedVal;
+        }
+        usernameInput.classList.add('hidden');
+        usernameDisplay.classList.remove('hidden');
+      };
+
+      usernameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') saveUsernameInput();
+        if (e.key === 'Escape') {
+          usernameInput.classList.add('hidden');
+          usernameDisplay.classList.remove('hidden');
+        }
+      });
+
+      usernameInput.addEventListener('blur', saveUsernameInput);
+    }
+
+    // --- COMPONENT 4: ADVANCED TO-DO ENGINE ---
+    function setupTodoManager() {
+      const todoForm = document.getElementById('todo-form');
+      const todoInput = document.getElementById('todo-input');
+
+      todoForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const taskText = todoInput.value.trim();
+        if (!taskText) return;
+
+        const newTask = {
+          id: 'task_' + Date.now(),
+          text: taskText,
+          completed: false
+        };
+
+        state.tasks.unshift(newTask);
+        saveTasksState();
+        todoInput.value = '';
+      });
+    }
+
+    function setTodoFilter(filterValue) {
+      state.currentTodoFilter = filterValue;
+
+      // Update segment styles
+      const filters = ['all', 'active', 'completed'];
+      filters.forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (f === filterValue) {
+          btn.className = "flex-1 text-center py-1.5 text-xs font-semibold rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 transition-all";
+        } else {
+          btn.className = "flex-1 text-center py-1.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 transition-all";
+        }
+      });
+
+      renderTasks();
+    }
+
+    function toggleTaskComplete(taskId) {
+      state.tasks = state.tasks.map(task => {
+        if (task.id === taskId) {
+          return { ...task, completed: !task.completed };
+        }
+        return task;
+      });
+      saveTasksState();
+    }
+
+    function triggerEditTask(taskId) {
+      const container = document.getElementById(`task-container-${taskId}`);
+      const textSpan = document.getElementById(`task-text-${taskId}`);
+      const editBtn = document.getElementById(`task-edit-${taskId}`);
+
+      if (!container || !textSpan) return;
+
+      // Prevent concurrent editing creation
+      if (container.querySelector('.task-edit-input')) return;
+
+      const currentText = textSpan.textContent.trim();
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = currentText;
+      input.className = "flex-grow bg-slate-800/90 border border-indigo-500 text-slate-100 px-2 py-1 rounded text-sm outline-none task-edit-input";
+      
+      // Swap elements
+      textSpan.classList.add('hidden');
+      textSpan.parentNode.insertBefore(input, textSpan);
+      input.focus();
+      input.select();
+
+      const finishEdit = () => {
+        const newValue = input.value.trim();
+        if (newValue && newValue !== currentText) {
+          state.tasks = state.tasks.map(task => {
+            if (task.id === taskId) {
+              return { ...task, text: newValue };
+            }
+            return task;
+          });
+          saveTasksState();
+        } else {
+          // Revert visual swap
+          input.remove();
+          textSpan.classList.remove('hidden');
+        }
+      };
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') finishEdit();
+        if (e.key === 'Escape') {
+          input.remove();
+          textSpan.classList.remove('hidden');
+        }
+      });
+
+      input.addEventListener('blur', finishEdit);
+    }
+
+    function deleteTask(taskId) {
+      state.tasks = state.tasks.filter(t => t.id !== taskId);
+      saveTasksState();
+    }
+
+    function renderTasks() {
+      const listContainer = document.getElementById('todo-list');
+      const emptyState = document.getElementById('todo-empty');
+      const progressFill = document.getElementById('todo-progress-fill');
+      const taskBadge = document.getElementById('task-count-badge');
+
+      // 1. Calculate Analytics
+      const totalCount = state.tasks.length;
+      const completedCount = state.tasks.filter(t => t.completed).length;
+      const ratio = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+      
+      progressFill.style.width = `${ratio}%`;
+      taskBadge.textContent = `${completedCount} / ${totalCount} Done`;
+
+      // Filter tasks to render
+      let tasksToRender = [...state.tasks];
+      if (state.currentTodoFilter === 'active') {
+        tasksToRender = tasksToRender.filter(t => !t.completed);
+      } else if (state.currentTodoFilter === 'completed') {
+        tasksToRender = tasksToRender.filter(t => t.completed);
+      }
+
+      // Toggle state lists
+      if (tasksToRender.length === 0) {
+        listContainer.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      listContainer.innerHTML = tasksToRender.map(task => {
+        const completedStyle = task.completed ? 'line-through text-slate-500 italic' : 'text-slate-200 dark:text-slate-150';
+        const checkboxIcon = task.completed ? 'fa-regular fa-circle-check text-indigo-400' : 'fa-regular fa-circle text-slate-400 group-hover:text-indigo-400';
+        
+        return `
+          <div id="task-container-${task.id}" class="group flex items-center justify-between gap-3 bg-white/5 dark:bg-slate-900/40 hover:bg-white/10 dark:hover:bg-slate-800/30 border border-white/5 rounded-2xl p-3.5 transition-all duration-150 shadow-sm">
+            <div class="flex items-center gap-3 flex-grow overflow-hidden">
+              <button onclick="toggleTaskComplete('${task.id}')" class="focus:outline-none transition-transform duration-100 hover:scale-110 active:scale-95" title="Toggle Status">
+                <i class="${checkboxIcon} text-lg"></i>
+              </button>
+              <span id="task-text-${task.id}" class="text-sm font-medium ${completedStyle} truncate select-none flex-grow">
+                ${escapeHTML(task.text)}
+              </span>
+            </div>
+            <!-- Task Item Control Options -->
+            <div class="flex items-center gap-1.5 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+              <button id="task-edit-${task.id}" onclick="triggerEditTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-indigo-400 rounded-lg hover:bg-indigo-500/10 transition-colors" title="Edit text">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+              </button>
+              <button onclick="deleteTask('${task.id}')" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors" title="Delete entry">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- COMPONENT 5: configurABLE FOCUS TIMER ENGINE ---
+    function setupPomodoroEngine() {
+      const configTrigger = document.getElementById('pomo-config-trigger');
+      const settingsCard = document.getElementById('pomo-settings-card');
+      const settingsCancel = document.getElementById('pomo-settings-cancel');
+      const settingsApply = document.getElementById('pomo-settings-apply');
+      const slider = document.getElementById('pomo-duration-range');
+      const sliderValText = document.getElementById('pomo-slider-val');
+
+      const startBtn = document.getElementById('pomo-start-btn');
+      const stopBtn = document.getElementById('pomo-stop-btn');
+      const resetBtn = document.getElementById('pomo-reset-btn');
+
+      // Hook Settings Form UI
+      configTrigger.addEventListener('click', () => {
+        settingsCard.classList.toggle('hidden');
+        slider.value = state.config.pomodoroDuration;
+        sliderValText.textContent = `${state.config.pomodoroDuration} Min`;
+      });
+
+      settingsCancel.addEventListener('click', () => {
+        settingsCard.classList.add('hidden');
+      });
+
+      slider.addEventListener('input', () => {
+        sliderValText.textContent = `${slider.value} Min`;
+      });
+
+      settingsApply.addEventListener('click', () => {
+        const val = parseInt(slider.value, 10);
+        if (val && val > 0 && val <= 60) {
+          state.config.pomodoroDuration = val;
+          saveConfigState();
+          resetTimerEngine();
+          settingsCard.classList.add('hidden');
+        }
+      });
+
+      // Hook Engine Playbacks
+      startBtn.addEventListener('click', startTimerEngine);
+      stopBtn.addEventListener('click', stopTimerEngine);
+      resetBtn.addEventListener('click', resetTimerEngine);
+    }
+
+    function resetTimerEngine() {
+      stopTimerEngine();
+      timerTotalSeconds = state.config.pomodoroDuration * 60;
+      timerRemainingSeconds = timerTotalSeconds;
+      updateTimerDisplay();
+      document.getElementById('timer-status-badge').textContent = 'Ready';
+      document.getElementById('timer-status-badge').className = "text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-1";
+    }
+
+    function startTimerEngine() {
+      if (timerIsRunning) return;
+      timerIsRunning = true;
+
+      // Adjust UI view of Control play states
+      document.getElementById('pomo-start-btn').classList.add('hidden');
+      document.getElementById('pomo-stop-btn').classList.remove('hidden');
+      document.getElementById('timer-status-badge').textContent = 'In Session';
+      document.getElementById('timer-status-badge').className = "text-[10px] font-bold tracking-widest text-indigo-400 uppercase mt-1 animate-pulse";
+
+      timerInterval = setInterval(() => {
+        if (timerRemainingSeconds > 0) {
+          timerRemainingSeconds--;
+          updateTimerDisplay();
+        } else {
+          // Time Completed successfully
+          handleTimerComplete();
+        }
+      }, 1000);
+    }
+
+    function stopTimerEngine() {
+      if (!timerIsRunning) return;
+      timerIsRunning = false;
+      clearInterval(timerInterval);
+
+      // Adjust control state buttons back
+      document.getElementById('pomo-start-btn').classList.remove('hidden');
+      document.getElementById('pomo-stop-btn').classList.add('hidden');
+      document.getElementById('timer-status-badge').textContent = 'Paused';
+      document.getElementById('timer-status-badge').className = "text-[10px] font-bold tracking-widest text-amber-400 uppercase mt-1";
+    }
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timerRemainingSeconds / 60);
+      const seconds = timerRemainingSeconds % 60;
+      
+      const mmStr = String(minutes).padStart(2, '0');
+      const ssStr = String(seconds).padStart(2, '0');
+      
+      document.getElementById('timer-numbers').textContent = `${mmStr}:${ssStr}`;
+
+      // Update Circular Progress Ring (SVG calculation)
+      const ring = document.getElementById('timer-progress-ring');
+      const totalCircumference = 276.4; // 2 * PI * r (r=44)
+      
+      let dashOffset = 0;
+      if (timerTotalSeconds > 0) {
+        const ratio = timerRemainingSeconds / timerTotalSeconds;
+        dashOffset = totalCircumference * (1 - ratio);
+      }
+      
+      ring.style.strokeDashoffset = dashOffset;
+    }
+
+    function handleTimerComplete() {
+      stopTimerEngine();
+      
+      // Play clean, soft browser audio ring
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Dynamic custom synth alert (Chime structure)
+        const playTone = (freq, delay, length) => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.destination);
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
+          
+          gain.gain.setValueAtTime(0.15, audioContext.currentTime + delay);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + length);
+          
+          osc.start(audioContext.currentTime + delay);
+          osc.stop(audioContext.currentTime + delay + length);
+        };
+
+        // Synthesize nice double ding
+        playTone(523.25, 0, 0.4); // C5
+        playTone(659.25, 0.15, 0.5); // E5
+        playTone(783.99, 0.30, 0.6); // G5
+
+      } catch (err) {
+        console.warn('Modern audio context could not boot safely prior to physical screen click context:', err);
+      }
+
+      // Visual success confirmation notice
+      document.getElementById('timer-status-badge').textContent = 'Flow Finished!';
+      document.getElementById('timer-status-badge').className = "text-[10px] font-bold tracking-widest text-emerald-400 uppercase mt-1";
+    }
+
+    // --- COMPONENT 6: QUICK LINKS / LAUNCHPAD ---
+    function setupLaunchpad() {
+      const addLinkBtn = document.getElementById('add-link-btn');
+      const cancelLinkBtn = document.getElementById('cancel-link-btn');
+      const addLinkPanel = document.getElementById('add-link-panel');
+      const linkForm = document.getElementById('link-form');
+
+      addLinkBtn.addEventListener('click', () => {
+        addLinkPanel.classList.toggle('hidden');
+      });
+
+      cancelLinkBtn.addEventListener('click', () => {
+        addLinkPanel.classList.add('hidden');
+      });
+
+      linkForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const nameVal = document.getElementById('link-name').value.trim();
+        let urlVal = document.getElementById('link-url').value.trim();
+
+        if (!nameVal || !urlVal) return;
+
+        // Auto Prepend https protocol safely if excluded by client
+        if (!/^https?:\/\//i.test(urlVal)) {
+          urlVal = 'https://' + urlVal;
+        }
+
+        const newShortcut = {
+          id: 'link_' + Date.now(),
+          name: nameVal,
+          url: urlVal
+        };
+
+        state.links.push(newShortcut);
+        saveLinksState();
+
+        // Clear Inputs
+        document.getElementById('link-name').value = '';
+        document.getElementById('link-url').value = '';
+        addLinkPanel.classList.add('hidden');
+      });
+    }
+
+    function removeLink(id, event) {
+      // Prevent anchor navigate triggers upon action clicks
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      state.links = state.links.filter(l => l.id !== id);
+      saveLinksState();
+    }
+
+    function renderLinks() {
+      const grid = document.getElementById('links-grid');
+      const emptyState = document.getElementById('links-empty');
+
+      if (state.links.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+
+      grid.innerHTML = state.links.map(link => {
+        // Safe domain name extraction for premium favicon visual indexing
+        let domain = 'google.com';
+        try {
+          const parsed = new URL(link.url);
+          domain = parsed.hostname;
+        } catch (e) {
+          // ignore parsing error
+        }
+
+        // Clean domain strings to optimize favicons
+        const cleanDomain = domain.replace(/^www\./, '');
+        const faviconSrc = `https://www.google.com/s2/favicons?sz=64&domain=${cleanDomain}`;
+
+        return `
+          <a href="${escapeHTML(link.url)}" target="_blank" rel="noopener noreferrer" class="group relative flex flex-col items-center justify-center p-4 bg-white/5 dark:bg-slate-900/40 hover:bg-white/10 dark:hover:bg-slate-800/30 border border-white/5 rounded-2xl hover:-translate-y-1 transition-all duration-300 text-center shadow-sm select-none">
+            
+            <!-- Remove Link Button -->
+            <button onclick="removeLink('${link.id}', event)" class="absolute top-2 right-2 p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150" title="Delete shortcut">
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+
+            <!-- Favicon Wrap with premium fallback handling -->
+            <div class="w-10 h-10 rounded-xl bg-white/10 dark:bg-slate-800/60 border border-white/10 p-1.5 flex items-center justify-center mb-2.5 shadow-inner">
+              <img src="${faviconSrc}" alt="" class="w-full h-full object-contain rounded-md" onerror="this.onerror=null; this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com'">
+            </div>
+
+            <!-- Custom User Label text -->
+            <span class="text-xs font-semibold text-slate-300 group-hover:text-white truncate w-full px-1">
+              ${escapeHTML(link.name)}
+            </span>
+            <span class="text-[9px] text-slate-500 group-hover:text-indigo-400/80 truncate w-full px-1 mt-0.5 font-mono">
+              ${cleanDomain}
+            </span>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // --- COMPONENT 7: UTILITIES & SANITIZERS ---
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
